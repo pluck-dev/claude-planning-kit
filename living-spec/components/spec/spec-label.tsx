@@ -24,32 +24,37 @@ export function SpecLabel({
   const ctx = useSpecContext();
   const labelRef = useRef<HTMLSpanElement>(null);
 
+  // 모든 훅은 조건문 이전에 호출 (Rules of Hooks 준수)
+  const handleLabelClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!ctx || ctx.mode !== 'spec') return;
+      e.stopPropagation();
+      ctx.setActiveItemId(uiId);
+      ctx.setPanelOpen(true);
+    },
+    [ctx, uiId]
+  );
+
   // normal 모드이거나 컨텍스트 없음 → children만 반환
   if (!ctx || ctx.mode === 'normal') {
     return <>{children}</>;
   }
 
-  const { mode, screenData, setActiveItemId, setPanelOpen } = ctx;
+  const { mode, screenData } = ctx;
+
+  // screenData가 없으면 (매니페스트에 없는 페이지) 라벨 미표시
+  if (!screenData) {
+    return <>{children}</>;
+  }
 
   // 현재 uiId에 해당하는 SpecItem 탐색
-  const item = screenData?.items.find((i) => i.id === uiId);
+  const item = screenData.items.find((i) => i.id === uiId);
   const labelNumber = item?.labelNumber ?? '?';
 
   const positionClass = POSITION_CLASSES[position];
 
-  // spec 모드에서 라벨 클릭 시 activeItemId 설정 및 패널 열기
-  const handleLabelClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (mode !== 'spec') return;
-      e.stopPropagation();
-      setActiveItemId(uiId);
-      setPanelOpen(true);
-    },
-    [mode, uiId, setActiveItemId, setPanelOpen]
-  );
-
   return (
-    <div className="relative inline-block">
+    <div className="relative">
       {children}
 
       {/* 원형 번호 라벨 */}
@@ -61,7 +66,6 @@ export function SpecLabel({
           'w-6 h-6 bg-blue-600 text-white rounded-full',
           'text-xs font-bold flex items-center justify-center',
           'select-none',
-          // spec 모드: 클릭 가능, screenshot 모드: 클릭 불가
           mode === 'spec'
             ? 'cursor-pointer hover:bg-blue-700 transition-colors'
             : 'cursor-default pointer-events-none',

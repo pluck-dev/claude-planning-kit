@@ -70,13 +70,13 @@ function SpecProviderInner({
         };
         const screens: ManifestEntry[] = manifest.default.screens;
 
-        // 정확히 일치하는 항목 먼저 탐색
-        let matched = screens.find((s) => s.pagePath === pathname);
+        // 정확히 일치하는 항목 먼저 탐색 (URL 경로 기준)
+        let matched = screens.find((s) => s.path === pathname);
 
         // 없으면 동적 경로 패턴으로 매칭 (예: "/members/[id]" → "/members/123")
         if (!matched) {
           matched = screens.find((s) => {
-            const pattern = s.pagePath.replace(/\[.*?\]/g, '[^/]+');
+            const pattern = s.path.replace(/\[.*?\]/g, '[^/]+');
             return new RegExp(`^${pattern}$`).test(pathname ?? '');
           });
         }

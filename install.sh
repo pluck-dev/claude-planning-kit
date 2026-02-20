@@ -20,10 +20,19 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# 버전
+SCRIPT_DIR_TMP="$(cd "$(dirname "${BASH_SOURCE[0]}" 2>/dev/null)" && pwd 2>/dev/null)" || SCRIPT_DIR_TMP=""
+if [ -n "$SCRIPT_DIR_TMP" ] && [ -f "$SCRIPT_DIR_TMP/VERSION" ]; then
+    VERSION=$(cat "$SCRIPT_DIR_TMP/VERSION" | tr -d '[:space:]')
+else
+    VERSION="unknown"
+fi
+
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  Claude Planning Kit - Full Installer      ║${NC}"
 echo -e "${BLUE}║  기획 → 디자인 → 퍼블 → 앱 → TC → Spec   ║${NC}"
+echo -e "${BLUE}║  v${VERSION}                                      ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -229,6 +238,10 @@ RULES
         echo -e "  ${GREEN}[OK]${NC} CLAUDE.md 신규 생성"
     fi
 
+    # 버전 기록
+    echo "$VERSION" > "$CLAUDE_DIR/.planning-kit-version"
+    echo -e "  ${GREEN}[OK]${NC} 버전 기록: v${VERSION}"
+
     # doc-sync hook 안내
     echo ""
     echo -e "  ${YELLOW}[INFO]${NC} doc-sync hook은 settings.json에 수동 추가가 필요합니다:"
@@ -292,6 +305,27 @@ if [ "$INSTALL_VAULT" = true ]; then
         echo -e "  ${GREEN}[OK]${NC} 00-HOME.md + PROGRESS.md"
     fi
 
+    # Vault 경로를 설정 파일에 기록
+    CONFIG_FILE="$HOME/.claude/.planning-kit.json"
+    if [ -f "$CONFIG_FILE" ]; then
+        # 기존 설정 파일이 있으면 vaultPath만 업데이트
+        if command -v python3 &> /dev/null; then
+            python3 -c "
+import json, sys
+try:
+    with open('$CONFIG_FILE') as f: cfg = json.load(f)
+except: cfg = {}
+cfg['vaultPath'] = '$VAULT_PATH'
+with open('$CONFIG_FILE', 'w') as f: json.dump(cfg, f, indent=2, ensure_ascii=False)
+"
+        else
+            echo "{\"vaultPath\": \"$VAULT_PATH\"}" > "$CONFIG_FILE"
+        fi
+    else
+        echo "{\"vaultPath\": \"$VAULT_PATH\"}" > "$CONFIG_FILE"
+    fi
+    echo -e "  ${GREEN}[OK]${NC} Vault 경로 저장: $CONFIG_FILE"
+
 fi
 
 # ═══════════════════════════════════════════
@@ -354,6 +388,8 @@ if [ "$INSTALL_SPEC" = true ]; then
         "living-spec/scripts/vault-utils/manifest.ts"
         "living-spec/scripts/vault-utils/diff.ts"
         "living-spec/scripts/vault-utils/reporter.ts"
+        "living-spec/scripts/audit-spec-mapping.js"
+        "living-spec/scripts/generate-doc-json.js"
     )
 
     SCRIPT_COUNT=0
@@ -367,7 +403,8 @@ if [ "$INSTALL_SPEC" = true ]; then
 
     # spec-data 디렉토리 생성
     mkdir -p "$PROJECT_PATH/src/spec-data"
-    echo '{"screens":{}}' > "$PROJECT_PATH/src/spec-data/_manifest.json"
+    mkdir -p "$PROJECT_PATH/src/spec-data/docs"
+    echo '{"project":"","version":"0.1.0","lastExportedAt":"","screens":[]}' > "$PROJECT_PATH/src/spec-data/_manifest.json"
     echo -e "  ${GREEN}[OK]${NC} spec-data/_manifest.json 생성"
 
     # 로컬 커맨드 복사
@@ -376,12 +413,51 @@ if [ "$INSTALL_SPEC" = true ]; then
     copy_file "commands-local/living-spec.md" "$LOCAL_CMD_DIR/living-spec.md" \
         && echo -e "  ${GREEN}[OK]${NC} .claude/commands/living-spec.md (프로젝트 로컬)"
 
+    # Living Spec 설정 파일 생성 (Vault 경로 연동)
+    SPEC_CONFIG="$PROJECT_PATH/spec.config.json"
+    if [ ! -f "$SPEC_CONFIG" ]; then
+        # Vault 경로 자동 감지 (이전 단계에서 설정된 경우)
+        DETECTED_VAULT=""
+        if [ -f "$HOME/.claude/.planning-kit.json" ] && command -v python3 &> /dev/null; then
+            DETECTED_VAULT=$(python3 -c "
+import json
+try:
+    with open('$HOME/.claude/.planning-kit.json') as f: print(json.load(f).get('vaultPath',''))
+except: pass
+" 2>/dev/null)
+        fi
+
+        if [ -n "$DETECTED_VAULT" ]; then
+            cat > "$SPEC_CONFIG" <<SPECEOF
+{
+  "vaultPath": "$DETECTED_VAULT",
+  "specDataDir": "src/spec-data",
+  "screensDir": "02-기획-디자인/화면설계서"
+}
+SPECEOF
+            echo -e "  ${GREEN}[OK]${NC} spec.config.json 생성 (Vault: $DETECTED_VAULT)"
+        else
+            cat > "$SPEC_CONFIG" <<SPECEOF
+{
+  "vaultPath": "",
+  "specDataDir": "src/spec-data",
+  "screensDir": "02-기획-디자인/화면설계서"
+}
+SPECEOF
+            echo -e "  ${YELLOW}[OK]${NC} spec.config.json 생성 (Vault 경로를 수동 입력해주세요)"
+        fi
+    else
+        echo -e "  ${YELLOW}[SKIP]${NC} spec.config.json 이미 존재"
+    fi
+
     # package.json 스크립트 안내
     echo ""
     echo -e "  ${YELLOW}[TODO]${NC} package.json에 스크립트 추가가 필요합니다:"
     echo '    "spec:export": "tsx scripts/vault-export.ts"'
     echo '    "spec:import": "tsx scripts/vault-import.ts"'
     echo '    "spec:check":  "tsx scripts/vault-check.ts"'
+    echo '    "spec:audit":  "node scripts/audit-spec-mapping.js"'
+    echo '    "spec:docs":   "node scripts/generate-doc-json.js"'
     echo ""
     echo -e "  ${YELLOW}[TODO]${NC} 의존성 설치: npm install -D tsx"
 

@@ -83,3 +83,25 @@ scripts/                      ← CLI 도구
 - **screenshot**: 흰 배경 + 라벨만 표시 (캡처용)
 
 키보드: `Ctrl+Shift+S` 로 모드 순환 (normal → spec → screenshot)
+
+---
+
+### /living-spec audit
+`node scripts/audit-spec-mapping.js` 실행과 동일.
+1. 모든 page.tsx에서 `<SpecLabel uiId="...">` 추출
+2. `_manifest.json`에서 URL 경로 → screenId 매핑
+3. 각 SCR JSON의 items와 대조
+4. 결과 분류:
+   - **OK**: 페이지 uiId와 SCR items 완전 일치
+   - **MISMATCH**: 일부 uiId가 SCR에 없거나, SCR에만 있는 항목 존재
+   - **NO_SCR**: SpecLabel 사용하지만 매니페스트에 SCR 매핑 없음
+5. ANSI 컬러 리포트 출력
+6. `--json` 플래그로 JSON 출력 가능
+
+### /living-spec doc-export
+`node scripts/generate-doc-json.js` 실행과 동일.
+1. Vault `03-개발/기능명세서/FNC-*.md` 스캔
+2. Vault `03-개발/API명세서/API-*.md` 스캔
+3. 각 마크다운의 frontmatter + 섹션(##) 파싱
+4. `src/spec-data/docs/{docId}.json` 생성
+5. Doc Viewer (관련문서 탭)에서 즉시 사용 가능

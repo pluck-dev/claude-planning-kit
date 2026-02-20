@@ -415,6 +415,14 @@ qa-agent (oh-my-claudecode:executor):
 4. _manifest.json 업데이트 확인
 ```
 
+**Step 1.5: Doc JSON 생성 (신규)**
+```
+1. Vault `03-개발/기능명세서/` 및 `03-개발/API명세서/` 스캔
+2. `node scripts/generate-doc-json.js --vault ${VAULT_ROOT}` 실행
+3. src/spec-data/docs/{FNC,API}-NNN.json 생성 확인
+4. SCR의 relatedDocs와 docs/ JSON 파일 매칭 확인
+```
+
 **Step 2: SpecLabel 래핑 코드 제안**
 ```
 1. manifest에서 대상 화면의 filePath 확인
@@ -444,6 +452,13 @@ qa-agent (oh-my-claudecode:executor):
 ```
 `npm run spec:check` 실행 → 전체 정합성 확인
 결과: 퍼블리시 성공 화면 수, 누락 항목, 다음 액션 제안
+```
+
+**Step 6: 매핑 감사 (신규)**
+```
+1. `node scripts/audit-spec-mapping.js` 실행
+2. MISMATCH 항목이 있으면 수정 제안
+3. 최종 리포트를 vault-plan 결과에 포함
 ```
 
 **전체 퍼블리시 (`/vault-plan publish all`):**

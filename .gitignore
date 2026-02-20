@@ -1,2 +1,23 @@
 .DS_Store
 *.backup.*
+
+# Dependencies
+node_modules/
+
+# OMC state
+.omc/
+
+# Living Spec 생성물
+spec-data/
+
+# 환경 변수
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db

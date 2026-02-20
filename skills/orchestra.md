@@ -53,7 +53,9 @@ Phase 5: TC (Test Cases)
 Phase 6: Living Spec (Vault ↔ Code 동기화)
   ├── 6a. Spec JSON Export ─── spec-data/ (vault-export)
   ├── 6b. SpecLabel 적용 ──── 페이지에 라벨 래핑 (publish)
-  └── 6c. 정합성 검증 ─────── vault-check 리포트
+  ├── 6c. Doc JSON Export ──── spec-data/docs/ (FNC/API → JSON)
+  ├── 6d. 매핑 감사 ────────── audit-spec-mapping 리포트
+  └── 6e. 정합성 검증 ─────── vault-check 리포트
 ```
 
 ---
@@ -131,7 +133,9 @@ Agent C: 디자인 상태 스캔 (subagent_type: Explore)
 | 5c | tests/e2e/ 에 테스트 파일 존재 | - | 없음 |
 | 6a | spec-data/ 에 JSON 5개 이상 | 1~4개 | 없음 |
 | 6b | SpecLabel import 있는 페이지 80% 이상 | 1개 이상 | 없음 |
-| 6c | vault-check Critical 0개 | Warning만 존재 | 실행 안 됨 |
+| 6c | spec-data/docs/ 에 JSON 1개 이상 | - | 없음 |
+| 6d | audit-spec-mapping 리포트 MISMATCH 0개 | MISMATCH 존재 | 실행 안 됨 |
+| 6e | vault-check Critical 0개 | Warning만 존재 | 실행 안 됨 |
 
 **Step 3: ORCHESTRA.md 생성**
 스캔 결과를 기반으로 ORCHESTRA.md를 자동 생성한다.
@@ -210,7 +214,9 @@ ORCHESTRA.md 기반으로:
 |----|------|------|--------|------|
 | 6a | Spec JSON Export | [ ] | spec-data/*.json | |
 | 6b | SpecLabel 적용 | [ ] | 페이지 SpecLabel 래핑 | |
-| 6c | 정합성 검증 | [ ] | vault-check 리포트 | |
+| 6c | Doc JSON Export | [ ] | spec-data/docs/*.json | |
+| 6d | 매핑 감사 | [ ] | audit-spec-mapping 리포트 | |
+| 6e | 정합성 검증 | [ ] | vault-check 리포트 | |
 
 ## 변경 이력
 - [date]: 프로젝트 초기화
@@ -356,7 +362,22 @@ ORCHESTRA.md 기반으로:
 4. 스크린샷 캡처 → vault 임베드
 ```
 
-### Phase 6c: 정합성 검증
+### Phase 6c: Doc JSON Export
+```
+1. `node scripts/generate-doc-json.js --vault ${VAULT_PATH}` 실행
+2. Vault FNC/API 마크다운 → spec-data/docs/ JSON 변환
+3. Doc Viewer에서 FNC/API 문서 내용 확인 가능
+```
+
+### Phase 6d: 매핑 감사
+```
+1. `node scripts/audit-spec-mapping.js` 실행
+2. 모든 페이지의 SpecLabel uiId ↔ SCR JSON 대조
+3. OK/MISMATCH/NO_SCR 분류 리포트
+4. MISMATCH 항목은 수동 확인 후 수정
+```
+
+### Phase 6e: 정합성 검증
 ```
 1. `npm run spec:check` 실행
 2. Critical/Warning/Info 리포트 확인
@@ -452,7 +473,7 @@ def orchestra_next(count=1):
                                                                           ↓
                                                                  5a ──→ 5b ──→ 5c
                                                                                   ↓
-                                                                        6a ──→ 6b ──→ 6c
+                                                                        6a ──→ 6b ──→ 6c ──→ 6d ──→ 6e
 ```
 
 각 단계는 **이전 단계가 [x] 완료** 상태여야 실행 가능.
@@ -489,7 +510,9 @@ def orchestra_next(count=1):
 | 2c | `/pencil-spec-doc loop` | 화면설계서 pen 생성 |
 | 2c | `/pencil-check` | 디자인 상태 누락 체크 |
 | 전체 | `/sync-docs` | 문서 싱크 체크 |
-| 6a-6c | `/vault-plan publish` | Living Spec 퍼블리시 |
+| 6a-6e | `/vault-plan publish` | Living Spec 퍼블리시 |
+| 6c | `/living-spec doc-export` | FNC/API 문서 JSON 생성 |
+| 6d | `/living-spec audit` | 매핑 정합성 감사 |
 
 ---
 

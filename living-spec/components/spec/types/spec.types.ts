@@ -110,24 +110,19 @@ export interface ScreenSpecData {
   lastSyncedAt?: string;
 }
 
-/** 매니페스트 항목 */
+/** 매니페스트 항목 (간소화: 실전 검증 버전) */
 export interface ManifestEntry {
   screenId: string;
-  screenName: string;
-  pagePath: string;        // "/members" (Next.js route)
-  filePath: string;        // "src/app/(admin)/members/page.tsx"
-  jsonFile: string;        // "SCR-001.json"
-  platform: 'web' | 'mobile' | 'both';
-  status: string;
-  lastExported?: string;
-  lastPublished?: string;
+  name: string;            // 화면명
+  path: string;            // URL 경로 (예: "/member/list")
+  pagePath: string;        // 파일 경로 (예: "src/app/(admin)/member/list/page.tsx")
 }
 
 /** 매니페스트 전체 */
 export interface SpecManifest {
-  projectName: string;
+  project: string;
   version: string;
-  updatedAt: string;
+  lastExportedAt: string;
   screens: ManifestEntry[];
 }
 
@@ -160,6 +155,25 @@ export interface SpecTooltipProps {
   item: SpecItem;
   onClose: () => void;
   anchorRect?: DOMRect;
+}
+
+/** Doc Viewer - 문서 섹션 */
+export interface DocSection {
+  title: string;
+  content: string;
+}
+
+/** Doc Viewer - 문서 데이터 (FNC/API JSON) */
+export interface DocData {
+  docId: string;
+  title: string;
+  type: string;
+  status: string;
+  version: string;
+  updated: string;
+  related: string[];
+  sections: DocSection[];
+  module?: string;
 }
 
 /** SpecPanel 탭 */
